@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boili Atölyesi Günlüğü</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .custom-glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .custom-input {
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            color: #f8fafc;
+            transition: all 0.2s ease;
+        }
+        .custom-input:focus {
+            border-color: #22c55e;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <!-- Üst Başlık & Logo -->
+    <header class="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 shadow-lg mb-6">
+        <div class="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-green-600 to-emerald-400 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg shadow-green-900/40">
+                    <i class="fa-solid font-bold fa-fish"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg md:text-xl text-slate-100 tracking-wide flex items-center gap-2">
+                        BOİLİ ATÖLYESİ GÜNLÜĞÜ
+                    </h1>
+                    <p class="text-xs text-slate-400">Sazan Avı Detaylı Arşiv & Veri Sistemi</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('importFile').click()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition border border-slate-700" title="Yedek Yükle">
+                    <i class="fa-solid fa-file-import md:mr-1"></i> <span class="hidden md:inline">Yükle</span>
+                </button>
+                <input type="file" id="importFile" class="hidden" accept=".json" onchange="verileriYukle(event)">
+                
+                <button onclick="verileriIndir()" class="p-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 rounded-lg text-xs transition border border-emerald-500/30" title="Cihaza Yedekle">
+                    <i class="fa-solid fa-download md:mr-1"></i> <span class="hidden md:inline">Yedekle</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 space-y-6">
+
+        <!-- Bildirim Mesajı -->
+        <div id="toast" class="hidden fixed top-20 right-4 z-50 bg-emerald-500 text-slate-950 px-4 py-3 rounded-xl shadow-xl font-medium text-sm flex items-center gap-2 transition-all">
+            <i class="fa-solid fa-circle-check"></i>
+            <span id="toastMsg">İşlem başarılı!</span>
+        </div>
+
+        <!-- YENİ AV EKLEME FORMU -->
+        <section class="custom-glass rounded-2xl p-5 md:p-6 shadow-xl">
+            <h2 class="text-emerald-400 font-semibold text-lg mb-4 flex items-center gap-2 border-b border-slate-700/60 pb-3">
+                <i class="fa-solid fa-plus-circle"></i> Yeni Av Kaydı Ekle
+            </h2>
+
+            <form id="avForm" class="space-y-4">
+                
+                <!-- GPS & BASINÇ BUTONU -->
+                <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-3">
+                    <button type="button" onclick="gpsVeBasincAl()" id="gpsBtn" class="w-full bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-medium py-3 px-4 rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-solid fa-location-crosshairs text-base"></i> Otomatik Konum, Basınç & Sıcaklık Yakala
+                    </button>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">📍 GPS Konumu</label>
+                            <input type="text" id="konum" placeholder="Enlem, Boylam" required class="custom-input w-full p-2.5 rounded-lg text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">⏱️ Hava Basıncı (hPa)</label>
+                            <input type="text" id="basinc" placeholder="Örn: 1013.2 hPa" class="custom-input w-full p-2.5 rounded-lg text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1">🌡️ Hava Sıcaklığı</label>
+                            <input type="text" id="sicaklik" placeholder="Örn: 21.5 °C" class="custom-input w-full p-2.5 rounded-lg text-xs">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TARİH & AĞIRLIK -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">📅 Tarih ve Saat</label>
+                        <input type="datetime-local" id="tarihSaat" required class="custom-input w-full p-3 rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">⚖️ Balık Ağırlığı (Kg)</label>
+                        <input type="text" id="agirlik" placeholder="Örn: 14.8" class="custom-input w-full p-3 rounded-xl text-sm">
+                    </div>
+                </div>
+
+                <!-- YEM & REÇETE -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">🪱 Kullanılan Yem & Boili Reçetesi *</label>
+                    <input type="text" id="yem" placeholder="Örn: Pineapple-Aromalı 20mm Pop-up + Amino CSL Daldırma" required class="custom-input w-full p-3 rounded-xl text-sm">
+                </div>
+
+                <!-- RİG & TAKIM -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">🎣 Rig / Takım / İğne Kombinasyonu</label>
+                    <input type="text" id="rig" placeholder="Örn: Korda IQ2 Fluorocarbon Combi Rig + No:4 Kurv Shank İğne" class="custom-input w-full p-3 rounded-xl text-sm">
+                </div>
+
+                <!-- ÖZEL NOTLAR -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">📝 Notlar (Rüzgar yönü, Dip Yapısı, Derinlik vb.)</label>
+                    <textarea id="notlar" rows="2" placeholder="Örn: Rüzgar poyrazdan esiyordu, mil tabanlı 3.5m derinlik..." class="custom-input w-full p-3 rounded-xl text-sm"></textarea>
+                </div>
+
+                <!-- KAYDET BUTONU -->
+                <button type="submit" class="w-full bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-slate-950 font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-950/50 transition duration-200 text-base flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Avı Arşive Kaydet
+                </button>
+            </form>
+        </section>
+
+        <!-- ARAMA & FİLTRELEME -->
+        <section class="flex flex-col sm:flex-row gap-3 items-center justify-between">
+            <div class="relative w-full sm:w-72">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-500 text-sm"></i>
+                <input type="text" id="aramaInput" oninput="arsivleriGoster()" placeholder="Yem, rig veya nota göre ara..." class="custom-input w-full pl-9 pr-3 py-2.5 rounded-xl text-xs">
+            </div>
+            <div class="text-xs text-slate-400 self-end sm:self-center">
+                Toplam Kayıt: <span id="toplamKayit" class="font-bold text-emerald-400">0</span>
+            </div>
+        </section>
+
+        <!-- GEÇMİŞ AV ARŞİVİ -->
+        <section class="space-y-4">
+            <h3 class="text-slate-300 font-medium text-base flex items-center gap-2">
+                <i class="fa-solid fa-box-archive text-emerald-400"></i> Kayıtlı Av Arşivi
+            </h3>
+
+            <div id="arsivListesi" class="space-y-4">
+                <!-- Dinamik Kayıtlar Buraya Gelecek -->
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Sayfa yüklendiğinde mevcut tarihi ve arşivleri getir
+        window.onload = function() {
+            tarihGuncelle();
+            arsivleriGoster();
+        };
+
+        function tarihGuncelle() {
+            const simdi = new Date();
+            simdi.setMinutes(simdi.getMinutes() - simdi.getTimezoneOffset());
+            document.getElementById('tarihSaat').value = simdi.toISOString().slice(0, 16);
+        }
+
+        // GPS ve Hava Durumu / Basınç Bilgisi Çekme (Open-Meteo API)
+        function gpsVeBasincAl() {
+            const btn = document.getElementById('gpsBtn');
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Konum ve Hava Verisi Alınıyor...`;
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async function(position) {
+                    const lat = position.coords.latitude.toFixed(6);
+                    const lon = position.coords.longitude.toFixed(6);
+                    document.getElementById('konum').value = `${lat}, ${lon}`;
+
+                    try {
+                        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,surface_pressure`);
+                        const data = await res.json();
+                        
+                        if (data && data.current) {
+                            if (data.current.surface_pressure) {
+                                document.getElementById('basinc').value = `${data.current.surface_pressure} hPa`;
+                            }
+                            if (data.current.temperature_2m !== undefined) {
+                                document.getElementById('sicaklik').value = `${data.current.temperature_2m} °C`;
+                            }
+                        }
+                        toastGoster("Konum ve basınç verisi başarıyla alındı!");
+                    } catch(e) {
+                        toastGoster("Konum alındı ancak hava servisinden veri çekilemedi.");
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = `<i class="fa-solid fa-location-crosshairs text-base"></i> Otomatik Konum, Basınç & Sıcaklık Yakala`;
+                    }
+                }, function(err) {
+                    alert("GPS konum izni alınamadı. Lütfen cihaz ayarlarınızdan konum iznini kontrol edin.");
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-location-crosshairs text-base"></i> Otomatik Konum, Basınç & Sıcaklık Yakala`;
+                }, { enableHighAccuracy: true, timeout: 10000 });
+            } else {
+                alert("Cihazınız veya tarayıcınız GPS desteklemiyor.");
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fa-solid fa-location-crosshairs text-base"></i> Otomatik Konum, Basınç & Sıcaklık Yakala`;
+            }
+        }
+
+        // Form Kaydetme
+        document.getElementById('avForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const yeniKayit = {
+                id: Date.now(),
+                tarihSaat: document.getElementById('tarihSaat').value,
+                agirlik: document.getElementById('agirlik').value || "Belirtilmedi",
+                konum: document.getElementById('konum').value,
+                basinc: document.getElementById('basinc').value || "Belirtilmedi",
+                sicaklik: document.getElementById('sicaklik').value || "Belirtilmedi",
+                yem: document.getElementById('yem').value,
+                rig: document.getElementById('rig').value || "Belirtilmedi",
+                notlar: document.getElementById('notlar').value || ""
+            };
+
+            let avlar = JSON.parse(localStorage.getItem('boiliAtolyesiAvlar')) || [];
+            avlar.unshift(yeniKayit);
+            localStorage.setItem('boiliAtolyesiAvlar', JSON.stringify(avlar));
+
+            document.getElementById('avForm').reset();
+            tarihGuncelle();
+            arsivleriGoster();
+            toastGoster("Av kaydı başarıyla arşive eklendi!");
+        });
+
+        // Arşiv Gösterme ve Arama
+        function arsivleriGoster() {
+            const listeDiv = document.getElementById('arsivListesi');
+            const aramaMetni = document.getElementById('aramaInput').value.toLowerCase();
+            let avlar = JSON.parse(localStorage.getItem('boiliAtolyesiAvlar')) || [];
+
+            // Arama filtresi
+            if (aramaMetni) {
+                avlar = avlar.filter(a => 
+                    a.yem.toLowerCase().includes(aramaMetni) ||
+                    a.rig.toLowerCase().includes(aramaMetni) ||
+                    a.notlar.toLowerCase().includes(aramaMetni)
+                );
+            }
+
+            document.getElementById('toplamKayit').innerText = avlar.length;
+
+            if (avlar.length === 0) {
+                listeDiv.innerHTML = `
+                    <div class="custom-glass rounded-2xl p-8 text-center text-slate-500">
+                        <i class="fa-solid fa-fish-fins text-4xl mb-3 text-slate-600 block"></i>
+                        <p class="text-sm">Henüz kayıtlı av bulunmuyor.</p>
+                    </div>`;
+                return;
+            }
+
+            let html = '';
+            avlar.forEach(av => {
+                const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(av.konum)}`;
+                const tarihBiçimli = new Date(av.tarihSaat).toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' });
+
+                html += `
+                    <div class="custom-glass rounded-2xl p-5 border border-slate-800 hover:border-slate-700 transition space-y-3 relative">
+                        <div class="flex items-start justify-between border-b border-slate-700/50 pb-3">
+                            <div>
+                                <div class="text-emerald-400 font-bold text-lg flex items-center gap-2">
+                                    <i class="fa-solid fa-weight-hanging text-sm"></i> ${av.agirlik} ${av.agirlik.includes('kg') || av.agirlik === 'Belirtilmedi' ? '' : 'Kg'}
+                                </div>
+                                <div class="text-xs text-slate-400 mt-0.5">
+                                    <i class="fa-regular fa-clock mr-1"></i> ${tarihBiçimli}
+                                </div>
+                            </div>
+                            <button onclick="kayitSil(${av.id})" class="text-rose-400 hover:text-rose-300 p-2 rounded-lg hover:bg-rose-950/30 transition text-xs" title="Sil">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
+                                <span class="text-slate-400 block mb-0.5">⏱️ Hava Basıncı</span>
+                                <span class="font-medium text-slate-200">${av.basinc}</span>
+                            </div>
+                            <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80">
+                                <span class="text-slate-400 block mb-0.5">🌡️ Sıcaklık</span>
+                                <span class="font-medium text-slate-200">${av.sicaklik}</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-1.5 text-xs">
+                            <div>
+                                <span class="text-slate-400 font-medium">🪱 Yem Reçetesi:</span>
+                                <p class="text-slate-200 bg-slate-900/40 p-2 rounded-lg border border-slate-800/50 mt-0.5">${av.yem}</p>
+                            </div>
+                            <div>
+                                <span class="text-slate-400 font-medium">🎣 Rig / Takım:</span>
+                                <p class="text-slate-300 mt-0.5">${av.rig}</p>
+                            </div>
+                            ${av.notlar ? `
+                            <div>
+                                <span class="text-slate-400 font-medium">📝 Notlar:</span>
+                                <p class="text-slate-400 italic mt-0.5">${av.notlar}</p>
+                            </div>` : ''}
+                        </div>
+
+                        <div class="pt-2 flex items-center justify-between border-t border-slate-800/60 text-xs">
+                            <span class="text-slate-500 truncate max-w-[200px]">📍 ${av.konum}</span>
+                            <a href="${mapsLink}" target="_blank" class="text-sky-400 hover:text-sky-300 flex items-center gap-1 font-medium hover:underline">
+                                Google Maps'te Aç <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+                            </a>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listeDiv.innerHTML = html;
+        }
+
+        // Kayıt Silme
+        function kayitSil(id) {
+            if (confirm("Bu av kaydını silmek istediğinizden emin misiniz?")) {
+                let avlar = JSON.parse(localStorage.getItem('boiliAtolyesiAvlar')) || [];
+                avlar = avlar.filter(a => a.id !== id);
+                localStorage.setItem('boiliAtolyesiAvlar', JSON.stringify(avlar));
+                arsivleriGoster();
+                toastGoster("Kayıt silindi.");
+            }
+        }
+
+        // Cihaza JSON Yedekleme
+        function verileriIndir() {
+            let avlar = localStorage.getItem('boiliAtolyesiAvlar');
+            if (!avlar || avlar === "[]") { 
+                alert("Yedeklenecek kayıtlı veri bulunmuyor."); 
+                return; 
+            }
+            
+            const blob = new Blob([avlar], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Boili_Atolyesi_Yedek_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            toastGoster("Yedek dosyası indirildi.");
+        }
+
+        // Yedeği Geri Yükleme
+        function verileriYukle(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const yuklenenData = JSON.parse(evt.target.result);
+                    if (Array.isArray(yuklenenData)) {
+                        localStorage.setItem('boiliAtolyesiAvlar', JSON.stringify(yuklenenData));
+                        arsivleriGoster();
+                        toastGoster("Yedek veriler başarıyla yüklendi!");
+                    } else {
+                        alert("Geçersiz yedek dosyası formatı.");
+                    }
+                } catch(err) {
+                    alert("Dosya okunamadı veya biçimi hatalı.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Bildirim Kutusu
+        function toastGoster(mesaj) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = mesaj;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
